@@ -1,0 +1,88 @@
+<project name="cis501-homework" default="jar">
+
+  <property name="lib.dir" value="lib"/>
+  <property name="src.dir" value="src"/>
+  <property name="test.dir" value="test"/>
+  <property name="target.dir" value="target"/>
+  <property name="classes.dir" value="${target.dir}/classes"/>
+  <property name="jar.dir" value="${target.dir}/jar"/>
+  <property name="testreport.dir" value="junit-report"/>
+
+  <path id="libClasspath">
+    <fileset dir="${lib.dir}" includes="**/*.jar"/>
+  </path>
+  <path id="appClasspath">
+    <pathelement location="${classes.dir}"/>
+  </path>
+
+  <!-- Some magic needed to get the junit task on SEAS machines -->
+  <taskdef name="junit"
+           classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask">
+    <classpath refid="libClasspath"/>
+  </taskdef>
+
+  <!-- Remove compiled code. -->
+  <target name="clean">
+    <delete dir="${target.dir}"/>
+  </target>
+
+  <target name="compile">
+    <mkdir dir="${classes.dir}"/>
+
+    <!-- compile application -->
+    <javac srcdir="${src.dir}/" destdir="${classes.dir}"
+           classpathref="libClasspath"
+           includeAntRuntime="false"
+           debug="true" debuglevel="lines,vars,source"
+           source="1.7" target="1.7"/>
+
+    <!-- compile tests -->
+    <javac srcdir="${test.dir}/" destdir="${classes.dir}"
+           classpathref="libClasspath"
+           includeAntRuntime="false"
+           debug="true" debuglevel="lines,vars,source"
+           source="1.7" target="1.7"/>
+    
+  </target>
+
+  <!-- Build a .jar file that contains source code and class files. -->
+  <target name="jar" depends="compile">
+    <mkdir dir="${jar.dir}"/>
+    <jar destfile="${jar.dir}/cis501-homework.jar" >
+      <fileset dir="${classes.dir}"/>
+      <fileset dir="${src.dir}"/>
+      <manifest>
+        <attribute name="Main-Class" value="cis501.submission.TraceRunner"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <!-- You can use this target to run your simulator. -->
+  <target name="run" depends="compile">
+    <java classname="cis501.submission.TraceRunner" fork="true">
+      <classpath>
+        <path refid="libClasspath"/>
+        <path refid="appClasspath"/>
+      </classpath>
+      <jvmarg line="-enableassertions"/> <!-- turn on Java assertions for easier debugging -->
+      <arg value="/path/to/trace/file"/> <!-- TODO: set path to trace file -->
+      <arg value="-1"/> <!-- run on entire trace file -->
+    </java>
+  </target>
+
+  <!-- Run test cases. -->
+  <target name="test" depends="compile">
+    <mkdir dir="${testreport.dir}"/>
+    <junit printsummary="yes" haltonfailure="no">
+      <classpath>
+        <path refid="libClasspath"/>
+        <path refid="appClasspath"/>
+      </classpath>
+      <formatter type="plain"/> 
+      <batchtest fork="yes" todir="${testreport.dir}">
+        <fileset dir="${test.dir}/" includes="**/*Test.java"/>
+      </batchtest>
+    </junit>
+  </target>
+
+</project>
