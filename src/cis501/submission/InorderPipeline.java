@@ -10,7 +10,7 @@ import java.util.Set;
  * as the simulator does.
  */
 enum Stage {
-    WRITEBACK(4), MEMORY(3), EXECUTE(2), DECODE(1), FETCH(0);
+    FETCH(0), DECODE(1), EXECUTE(2), MEMORY(3), WRITEBACK(4);
 
     private static Stage[] vals = values();
     private final int index;
