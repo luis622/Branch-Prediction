@@ -5,10 +5,6 @@ import cis501.*;
 
 import java.util.Set;
 
-/**
- * Note: Stages are declared in "reverse" order to simplify iterating over them in reverse order,
- * as the simulator does.
- */
 enum Stage {
     FETCH(0), DECODE(1), EXECUTE(2), MEMORY(3), WRITEBACK(4);
 
@@ -26,7 +22,7 @@ enum Stage {
 
     /** Returns the next stage in the pipeline, e.g., next after Fetch is Decode */
     public Stage next() {
-        return vals[(this.ordinal() - 1 + vals.length) % vals.length];
+        return vals[(this.ordinal() +1) % vals.length];
     }
 }
 
