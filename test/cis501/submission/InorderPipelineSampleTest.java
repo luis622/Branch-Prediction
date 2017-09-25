@@ -7,9 +7,11 @@ import cis501.MemoryOp;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import static cis501.Bypass.MX;
 import static org.junit.Assert.assertEquals;
 
 public class InorderPipelineSampleTest {
@@ -127,6 +129,42 @@ public class InorderPipelineSampleTest {
         //  fdxmw|
         final long expected = 6 + 1;
         assertEquals(expected, sim.getCycles());
+    }
+
+    @Test
+    public void testMultipleProducerMX() {
+        List<Insn> insns = new LinkedList<>();
+        insns.add(makeInsn(3, 1, 2, null));
+        insns.add(makeInsn(3, 4, 5, null));
+        insns.add(makeInsn(7, 6, 3, null));
+
+        sim = new InorderPipeline(0/*no add'l memory latency*/, EnumSet.of(MX));
+
+        sim.run(insns);
+        assertEquals(3, sim.getInsns());
+        // 123456789a
+        // fdxmw  |
+        //  fdxmw |
+        //   fdxmw|
+        assertEquals(8, sim.getCycles());
+    }
+
+    @Test
+    public void testMultipleProducerLoadMX() {
+        List<Insn> insns = new LinkedList<>();
+        insns.add(makeInsn(3, 1, 2, MemoryOp.Load));
+        insns.add(makeInsn(3, 4, 5, null));
+        insns.add(makeInsn(7, 6, 3, null));
+
+        sim = new InorderPipeline(0/*no add'l memory latency*/, EnumSet.of(MX));
+
+        sim.run(insns);
+        assertEquals(3, sim.getInsns());
+        // 123456789a
+        // fdxmw  |
+        //  fdxmw |
+        //   fdxmw|
+        assertEquals(8, sim.getCycles());
     }
 
 }
