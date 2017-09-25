@@ -42,16 +42,6 @@ public class InorderPipeline implements IInorderPipeline {
 
     }
 
-    /**
-     * Create a new pipeline with the additional memory latency and branch predictor. The pipeline
-     * should model full bypassing (MX, Wx, WM).
-     *
-     * @param additionalMemLatency see InorderPipeline(int, Set<Bypass>)
-     * @param bp                   the branch predictor to use
-     */
-    public InorderPipeline(int additionalMemLatency, BranchPredictor bp) {
-    }
-
     @Override
     public String[] groupMembers() {
         return new String[]{"your", "names"};
