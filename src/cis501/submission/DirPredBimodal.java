@@ -18,12 +18,13 @@ public class DirPredBimodal implements IDirectionPredictor {
 		this.indexBits = indexBits;
 
 		// 'inderxBits + 1': In BranchPredictor PC is already shifted once
-		for (int i = 0; i < indexBits+1; i++) {
+		//eric took off 
+		for (int i = 0; i < indexBits; i++) {
 			this.mask |= (1 << i);
 		}
 
 		//Clears the least significant bit by anding with: 0000 0001 => 1111 1110
-		mask &= ~(1);
+		//mask &= ~(1);
 				
 		/*
 		// Clears the least significant bit by anding with: 0000 0001 => 1111 1110
@@ -102,6 +103,7 @@ public class DirPredBimodal implements IDirectionPredictor {
 			BimodalBHT[(int) indexBits][1] -= 1;
 		 */
 		}
+		//System.out.println("index: " + indexBits + " " + BimodalBHT[(int) indexBits][1]);
 	}
 
 }

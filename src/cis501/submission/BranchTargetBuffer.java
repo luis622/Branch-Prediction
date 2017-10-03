@@ -7,8 +7,9 @@ import cis501.IBranchTargetBuffer;
 public class BranchTargetBuffer implements IBranchTargetBuffer {
 	
 	HashMap<Long,Long> hm = new HashMap<Long, Long>();
-	private long[][] BTB = new long[20][3];
+	private long[][] BTB = new long[1050000][3];// 2^20 index
 	private long prediction;
+	private long tag;
 	private long confirmed_pred;
 	
 	private final int IDX = 0;
@@ -22,7 +23,7 @@ public class BranchTargetBuffer implements IBranchTargetBuffer {
     	for (int i = 0; i < indexBits; i++)
     		mask |= (1 << i);
     	
-    	//mask &= ~(1);
+    	 //mask &= ~(1);
     }
 
     
@@ -31,20 +32,15 @@ public class BranchTargetBuffer implements IBranchTargetBuffer {
     public long predict(long pc) {
     	
     	long index = pc & mask;
-    	// System.out.println("hash " + hm.get(index));
-    	// long rval = (hm.get(index) == null) ? 0 : hm.get(index);
-    	// return rval;
     	// 2d array [0] = index [1] = tag [2] = target
-    	//add these defines in later
-    	prediction = BTB[(int) index][TAG];
-    	//if they are equal then keep prediction else return 0
-    	prediction = (prediction == pc) ? BTB[(int) index][TARGET] : 0;
-    	 // 8 =     00001000 pc
-    	// 0        00000000
-    	//mmask     00011100
-    	// 100 =    01100100 predict
-    	//index is 3 = 11100
-    	// 42 =     00101010
+    	//we need to predict if its a branch AND its next target
+    	//tag = hm.get(index);
+    	tag = BTB[(int) index][TAG]; //gets target  	
+    	//is there something in the table?
+    	//if yes then get the target
+    	//if they are equal then keep prediction else return pc
+    	prediction = (tag == pc) ? BTB[(int) index][TARGET] : 0;
+    	
     	return prediction;
     }
 
@@ -52,7 +48,8 @@ public class BranchTargetBuffer implements IBranchTargetBuffer {
     public void train(long pc, long actual) {
 
     	long index = pc & mask;
-    	//hm.put(index,actual);
+    	
+    	//hm.put(index, value)
     	BTB[(int) index][TAG] = pc;
     	BTB[(int) index][TARGET] = actual;
     	

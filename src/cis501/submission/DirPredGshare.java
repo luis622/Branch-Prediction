@@ -25,11 +25,11 @@ public class DirPredGshare extends DirPredBimodal {
 		this.BHR = historyBits;
 
 		//'inderxBits + 1': In BranchPredictor PC is already shifted once 
-		for (int i = 0; i < indexBits + 1; i++) {
+		for (int i = 0; i < indexBits; i++) {
 			maskIndex |= (1 << i);
 		}
 		//Clears the least significant bit by anding with: 0000 0001 => 1111 1110 
-		maskIndex &= ~(1);
+		//maskIndex &= ~(1);
 	}
 
 	@Override
