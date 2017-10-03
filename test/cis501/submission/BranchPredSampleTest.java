@@ -37,6 +37,7 @@ public class BranchPredSampleTest {
         IDirectionPredictor always = new DirPredAlwaysTaken();
         IDirectionPredictor never = new DirPredNeverTaken();
         tournament = new DirPredTournament(3/*index bits*/, never, always);
+        //tournament = new DirPredTournament(3/*index bits*/, bimodal, gshare);
 
         // pipeline uses never predictor
         pipe = new InorderPipeline(0, new BranchPredictor(never, btb));
