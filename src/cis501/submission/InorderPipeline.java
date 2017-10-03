@@ -305,13 +305,14 @@ public class InorderPipeline implements IInorderPipeline {
 
 		// we need to copy and then set to empty
 		if (decode_state == FULL) {
+			
 			mylist[execute] = mylist[decode];
 			expected_pc[execute] = expected_pc[decode];
 			execute_state = FULL;
 			decode_state = EMPTY; // set to empty we are shifting to the done stage
 			
-			if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != mylist[fetch].pc && mylist[fetch].asm != "stall")
-				System.out.println("incorrect op code: " + mylist[execute].asm);
+			//if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != mylist[fetch].pc && mylist[fetch].asm != "stall")
+				//System.out.println("incorrect op code: " + mylist[execute].asm);
 			
 			//in this stage of the pipeline we know whether or not its a branch
 			if (mylist[execute].branchType != null && mylist[execute].asm != "stall")
@@ -320,15 +321,15 @@ public class InorderPipeline implements IInorderPipeline {
 				//predict_type.train(mylist[decode].pc, mylist[decode].branchTarget, mylist[decode].branchDirection);
 				
 				// we did not take
-				if(mylist[execute].fallthroughPC() == mylist[fetch].pc /*expected_pc[execute]*/) /*|| mylist[execute].fallthroughPC() == mylist[decode].pc expected_pc[execute])*/
+				if(mylist[execute].fallthroughPC() == expected_pc[execute] /*expected_pc[execute]*/)
 				{
 					//we did not take and were wrong ): 
-					//predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
+					predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
 					if (mylist[execute].branchDirection != Direction.NotTaken)
 					{
 						//predict_type.train(mylist[execute].pc, mylist[execute].branchTarget, mylist[execute].branchDirection);
 						mispredict_count++;
-						System.out.println("not taken line: " + (insn_count-3) + " " + mylist[execute].asm);
+						//System.out.println("not taken line: " + (insn_count-3) + " " + mylist[execute].asm);
 						cycle_count +=2;
 						
 						//why?!?!?! line 410
@@ -356,11 +357,10 @@ public class InorderPipeline implements IInorderPipeline {
 							}
 						} //if latency
 					}//if we were wrong
-					predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
 				}//if not taken
 				
 				// we took
-				else if(mylist[execute].branchTarget == mylist[fetch].pc /*expected_pc[execute]*/ )
+				else if(mylist[execute].branchTarget == expected_pc[execute] /*expected_pc[execute]*/ )
 				{
 					//maybe check to see if we branched on something that wasnt a branch?
 					predict_type.train(mylist[execute].pc, mylist[execute].branchTarget, mylist[execute].branchDirection);

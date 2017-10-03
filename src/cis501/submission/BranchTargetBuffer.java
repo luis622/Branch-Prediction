@@ -20,9 +20,12 @@ public class BranchTargetBuffer implements IBranchTargetBuffer {
 	
     public BranchTargetBuffer(int indexBits) {
 
-    	for (int i = 0; i < indexBits; i++)
-    		mask |= (1 << i);
+    	//for (int i = 0; i < indexBits; i++)
+    		//mask |= (1 << i);
     	
+    	mask = (int) Math.pow(2, indexBits) -1;
+    	//System.out.println("index bits " + indexBits);
+    	//System.out.println("mask " + mask);
     	 //mask &= ~(1);
     }
 
