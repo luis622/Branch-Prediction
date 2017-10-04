@@ -170,7 +170,7 @@ public class InorderPipeline implements IInorderPipeline {
 			latency_load = false;
 			insn_count++;
 
-			if (insn_count == 3219) {
+			if (insn_count == 584) {
 				System.out.println("stopping here for debugging purposes");
 			}
 
@@ -331,18 +331,17 @@ public class InorderPipeline implements IInorderPipeline {
 						mispredict_count++;
 						System.out.println("not taken line: " + (insn_count-3) + " " + mylist[execute].asm);
 						cycle_count +=2;
-						
-						//why?!?!?! line 410
-						//if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
-						//{
-						//	System.err.println("weird thing");
-						//	cycle_count -=1;
-					//	}
-						
+
 						if (latency != 0) {
+
+							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
+							{
+								//System.err.println("weird thing");
+								cycle_count -=1;
+							}
 							if (mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store) {
 								cycle_count -= 1;
-								//System.out.println("due to latency");
+								System.out.println("due to latency");
 							}
 							if ((mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store)
 									&& (mylist[write].mem == MemoryOp.Load || mylist[write].mem == MemoryOp.Store)) {
@@ -379,6 +378,12 @@ public class InorderPipeline implements IInorderPipeline {
 						//}
 												
 						if (latency != 0) {
+							
+							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
+							{
+								System.err.println("weird thing");
+								cycle_count -=1;
+							}
 							if (mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store) {
 								cycle_count -= 1;
 								//System.out.println("due to latency");

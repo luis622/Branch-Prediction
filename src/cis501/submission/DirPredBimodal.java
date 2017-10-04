@@ -17,7 +17,7 @@ public class DirPredBimodal implements IDirectionPredictor {
 		this.BimodalBHT = new long[(int) Math.pow(2, indexBits)][3];
 		this.indexBHT = indexBits;
 
-		indexBits = (int) (Math.pow(2, indexBits) - 1);
+		mask = (int) (Math.pow(2, indexBits) - 1);
 	}
 
 	@Override

@@ -10,19 +10,20 @@ public class DirPredGshare extends DirPredBimodal {
 	public int BHR = 0;
 	public int mask = 0;
 	public long indexBHT = 0;
+	public long historyBits = 0;
 
 	public long[][] BHT;
-	public long indexBits = 0;
 
 	public DirPredGshare(int indexBits, int historyBits) {
 		super(indexBits);
 
 		this.GShareBHT = new long[(int) Math.pow(2, indexBits)][3];
-		this.indexBits = indexBits;
 
-		BHR = historyBits;
+		this.historyBits = historyBits;
+		
+		//BHR = historyBits;
 
-		indexBits = (int) (Math.pow(2, indexBits) - 1);
+		mask = (int) (Math.pow(2, indexBits) - 1);
 	}
 
 	@Override
@@ -40,6 +41,7 @@ public class DirPredGshare extends DirPredBimodal {
 		 * prediction <= 1: Not Taken 
 		 * prediction >= 2: Taken
 		 */
+		
 		switch (prediction) {
 		case 0:
 		case 1: {
@@ -70,7 +72,8 @@ public class DirPredGshare extends DirPredBimodal {
 		// Train branch predictor
 		if (Direction.Taken == actual) {
 			// Update BHR with taken
-			BHR |= (1 << 0);
+			BHR = (BHR << 1);
+			BHR |= 1;
 
 			// Update if taken and current counter is (NT, nt or t)
 			// Saturate the counter if current state is '3'
@@ -82,8 +85,9 @@ public class DirPredGshare extends DirPredBimodal {
 		}
 		if (Direction.NotTaken == actual) {
 			// Update BHR with not taken
-			BHR &= ~(1 << 0);
-
+			BHR = (BHR << 1);
+			BHR |= 0;
+			
 			// Update if not taken and current counter is (nt, t or T)
 			// Saturate the counter if current state is '0'
 			if (confirmPred > 0) {
@@ -92,11 +96,6 @@ public class DirPredGshare extends DirPredBimodal {
 		}
 
 		// Clearing the nth bit (to model a bounded-size history)
-		BHR &= ~(1 << indexBits);
-	}
-
-	public int getGlobalPrediction(int indexBHT) {
-
-		return (int) GShareBHT[indexBHT][1];
+		BHR &= ~(1 << historyBits);
 	}
 }
