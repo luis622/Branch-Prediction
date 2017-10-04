@@ -31,13 +31,12 @@ public class BranchPredSampleTest {
         // Runs before each test...() method
         btb = new BranchTargetBuffer(3/*index bits*/);
         bimodal = new DirPredBimodal(3/*index bits*/);
-        gshare = new DirPredGshare(3/*index bits*/, 3/*1 history bits*/);
+        gshare = new DirPredGshare(3/*index bits*/, 1/*history bits*/);
 
         // create a tournament predictor that behaves like bimodal
         IDirectionPredictor always = new DirPredAlwaysTaken();
         IDirectionPredictor never = new DirPredNeverTaken();
         tournament = new DirPredTournament(3/*index bits*/, never, always);
-        //tournament = new DirPredTournament(3/*index bits*/, bimodal, gshare);
 
         // pipeline uses never predictor
         pipe = new InorderPipeline(0, new BranchPredictor(never, btb));
@@ -214,39 +213,18 @@ public class BranchPredSampleTest {
         pl.run(uiter);
         assertEquals(0.81, pl.getInsns() / (double) pl.getCycles(), 0.01);
     }
-    
+
     @Test
     public void housetest() {
-    	final IDirectionPredictor gsh = new DirPredGshare(5/*index bits*/, 5);// new DirPredBimodal(5);
+    	final IDirectionPredictor gsh = new DirPredGshare(5/*index bits*/, 5);
+    	final IDirectionPredictor bm = new DirPredBimodal(5);
+    	final IDirectionPredictor nev = new DirPredNeverTaken(); 
     	final IBranchTargetBuffer ericbtb = new BranchTargetBuffer(5);
-    	InsnIterator uiter = new InsnIterator(TRACE_FILE, 5000);
-    	IInorderPipeline eric = new InorderPipeline(1, new BranchPredictor(gsh, ericbtb));
+    	InsnIterator uiter = new InsnIterator(TRACE_FILE,5000);
+    	IInorderPipeline eric = new InorderPipeline(1, new BranchPredictor(nev, ericbtb));
     	eric.run(uiter);
-    	assertEquals(7247, eric.getCycles());
+    	assertEquals(7562, eric.getCycles());
     }
     
-    @Test
-    public void gshareHistory() {
-        // initially, history is 0
-    	//PC, actual
-    	//indexBHT = BHR^PC
-        gshare.train(0, Direction.Taken); // 000 ^ 000 == 0 index
-        // history is 001, PC=0 => taken
-        assertEquals(Direction.NotTaken, gshare.predict(1)); // 001 ^ 001 == 000
-        
-        gshare.train(1, Direction.Taken); // 001 ^ 001 == 000
-        // history is 1
-        assertEquals(Direction.NotTaken, gshare.predict(1)); // 11 ^ 1 == 10
-        
-        gshare.train(0, Direction.Taken); // 0 ^ 0 == 0
-        // history is 1
-        assertEquals(Direction.NotTaken, gshare.predict(1)); // 101 ^ 1 == 0
-        
-        gshare.train(1, Direction.Taken); // 1 ^ 1 == 0
-        // history is 1
-        assertEquals(Direction.Taken, gshare.predict(1)); // 1 ^ 1 == 0
-    }
-    
-
     // add more tests here!
 }

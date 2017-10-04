@@ -170,7 +170,7 @@ public class InorderPipeline implements IInorderPipeline {
 			latency_load = false;
 			insn_count++;
 
-			if (insn_count == 584) {
+			if (insn_count == 3220) {
 				System.out.println("stopping here for debugging purposes");
 			}
 
@@ -179,7 +179,7 @@ public class InorderPipeline implements IInorderPipeline {
 				latency_count++;
 			}
 
-			// for a weird latency load use like line 52 53
+			// for a werid latency load use like line 52 53
 			if (latency != 0 && (insn.srcReg1 == mylist[decode].dstReg || insn.srcReg2 == mylist[decode].dstReg)
 					&& mylist[decode].mem == MemoryOp.Load && mylist[fetch].mem != MemoryOp.Load && wx_bypass == true) {
 				// System.err.println("latency load use line " + MyData.insn_count);
@@ -311,37 +311,36 @@ public class InorderPipeline implements IInorderPipeline {
 			execute_state = FULL;
 			decode_state = EMPTY; // set to empty we are shifting to the done stage
 			
-			if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != mylist[fetch].pc && mylist[fetch].asm != "stall")
-				System.out.println("incorrect op code: " + mylist[execute].asm);
+			//if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != mylist[fetch].pc && mylist[fetch].asm != "stall")
+				//System.out.println("incorrect op code: " + mylist[execute].asm);
 			
 			//in this stage of the pipeline we know whether or not its a branch
 			if (mylist[execute].branchType != null && mylist[execute].asm != "stall")
 			{
-				// train no matter what
-				//predict_type.train(mylist[decode].pc, mylist[decode].branchTarget, mylist[decode].branchDirection);
-				
 				// we did not take
-				if(mylist[execute].fallthroughPC() ==  expected_pc[execute]) /*|| mylist[execute].fallthroughPC() == mylist[decode].pc expected_pc[execute])*/
+				if(mylist[execute].fallthroughPC() == expected_pc[execute] /*expected_pc[execute]*/)
 				{
+					//predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
 					//we did not take and were wrong ): 
-					predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
 					if (mylist[execute].branchDirection != Direction.NotTaken)
 					{
-						//predict_type.train(mylist[execute].pc, mylist[execute].branchTarget, mylist[execute].branchDirection);
+						predict_type.train(mylist[execute].pc, mylist[execute].branchTarget, mylist[execute].branchDirection);
 						mispredict_count++;
-						System.out.println("not taken line: " + (insn_count-3) + " " + mylist[execute].asm);
+						System.out.println("not taken line: " + insn_count + " " + mylist[execute].asm);
 						cycle_count +=2;
-
+						
+						
 						if (latency != 0) {
-
+							
 							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
 							{
-								//System.err.println("weird thing");
+								System.err.println("weird thing");
 								cycle_count -=1;
 							}
+							
 							if (mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store) {
 								cycle_count -= 1;
-								System.out.println("due to latency");
+								//System.out.println("due to latency: " + mylist[execute].asm + " :" + insn_count );
 							}
 							if ((mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store)
 									&& (mylist[write].mem == MemoryOp.Load || mylist[write].mem == MemoryOp.Store)) {
@@ -356,34 +355,32 @@ public class InorderPipeline implements IInorderPipeline {
 							}
 						} //if latency
 					}//if we were wrong
+					//else we did not take and were right (:
+					else
+					{
+						predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
+					}
 				}//if not taken
 				
 				// we took
-				else if(mylist[execute].branchTarget == expected_pc[execute] )
+				else if(mylist[execute].branchTarget == expected_pc[execute] /*expected_pc[execute]*/ )
 				{
-					//maybe check to see if we branched on something that wasnt a branch?
-					predict_type.train(mylist[execute].pc, mylist[execute].branchTarget, mylist[execute].branchDirection);
 					//we took and were wrong ):
 					if (mylist[execute].branchDirection != Direction.Taken)
 					{
+						predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
 						mispredict_count++;
 						System.err.println("taken line: " + (insn_count-3) + mylist[execute].asm);
 						cycle_count +=2;
-						
-						//why?!?!?! line 410
-						//if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
-						//{
-						///	System.err.println("weird thing");
-						//	cycle_count -=1;
-						//}
-												
+																		
 						if (latency != 0) {
-							
+														
 							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
 							{
 								System.err.println("weird thing");
 								cycle_count -=1;
 							}
+							
 							if (mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store) {
 								cycle_count -= 1;
 								//System.out.println("due to latency");
@@ -400,7 +397,11 @@ public class InorderPipeline implements IInorderPipeline {
 								//System.out.println("three loads add one again? ");
 							}
 						}//if latency
-					}// if not taken 
+					}// if not taken
+					//else we took and were right 
+					else {
+						predict_type.train(mylist[execute].pc, mylist[execute].branchTarget, mylist[execute].branchDirection);
+					}
 				}//else if 
 				
 			}// if was a branch 

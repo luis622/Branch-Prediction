@@ -5,7 +5,6 @@ import cis501.IDirectionPredictor;
 
 public class DirPredBimodal implements IDirectionPredictor {
 
-	//private long[][] BHTBHT = new long[20][3];
 	public int prediction;
 	public long confirmPred;
 	public long[][] BimodalBHT;
