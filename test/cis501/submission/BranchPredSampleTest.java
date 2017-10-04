@@ -216,12 +216,14 @@ public class BranchPredSampleTest {
 
     @Test
     public void housetest() {
-    	final IDirectionPredictor gsh = /*new DirPredGshare(5/*index bits, 5);*/ new DirPredBimodal(5);
+    	final IDirectionPredictor gsh = new DirPredGshare(5/*index bits*/, 5);
+    	final IDirectionPredictor bm = new DirPredBimodal(5);
+    	final IDirectionPredictor nev = new DirPredNeverTaken(); 
     	final IBranchTargetBuffer ericbtb = new BranchTargetBuffer(5);
-    	InsnIterator uiter = new InsnIterator(TRACE_FILE, 5000);
-    	IInorderPipeline eric = new InorderPipeline(1, new BranchPredictor(gsh, ericbtb));
+    	InsnIterator uiter = new InsnIterator(TRACE_FILE,5000);
+    	IInorderPipeline eric = new InorderPipeline(1, new BranchPredictor(nev, ericbtb));
     	eric.run(uiter);
-    	assertEquals(7227, eric.getCycles());
+    	assertEquals(7562, eric.getCycles());
     }
     
     // add more tests here!
