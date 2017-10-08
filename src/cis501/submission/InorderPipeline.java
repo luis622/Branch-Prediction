@@ -73,9 +73,6 @@ public class InorderPipeline implements IInorderPipeline {
 	private static final int EMPTY = 0;
 
 	private long mispredict_count = 0;
-	private long WX_count;
-	private long WM_count;
-	private long MX_count;
 
 	private boolean first_instruction = true;
 	private Direction predicted_direction;
@@ -100,10 +97,11 @@ public class InorderPipeline implements IInorderPipeline {
 	// BranchPredictor predict = new InorderPipeline(1,Bypass.FULL_BYPASS);
 	// BranchPredictor brp = new BranchPredictor();
 
+	
 	private static Insn makeInsn(int dst, int src1, int src2, MemoryOp mop) {
 		return new Insn(dst, src1, src2, 1, 4, null, 0, null, mop, 1, 1, "stall");
 	}
-
+	
 	/**
 	 * 
 	 * Create a new pipeline with the given additional memory latency.
@@ -141,40 +139,26 @@ public class InorderPipeline implements IInorderPipeline {
 		short stall = -1;
 		boolean latency_load = false;
 		first_instruction = true;
-		// bools for determing hazards
-		// boolean check_WX = true;
-		// boolean check_MX = false;
-		// boolean check_WM = false;
 
 		mylist[stall_op] = makeInsn(stall, stall, stall, null);
 		mylist[fetch] = makeInsn(stall, stall, stall, null);
 		mylist[write] = makeInsn(stall, stall, stall, null);
 		mylist[memory] = makeInsn(stall, stall, stall, null);
 		mylist[decode] = makeInsn(stall, stall, stall, null);
-		mylist[out] = makeInsn(stall, stall, stall, null); // added so we could see more of the pipeline
+		mylist[out] = makeInsn(stall, stall, stall, null);
+		mylist[execute] = makeInsn(stall, stall, stall, null);
+		// added so we could see more of the pipeline
 		// create our stall instruction;
 
-		// mx_bypass = false; // true means we can not use the bypass false means we can
-		// wx_bypass = false;
-		// wm_bypass = false; //false meand we can use for Branchprediction we are
-		// modeling fullbypass
-
-		// since we are no longer being passed a bypass... for this assignment we are
-		// modeling full
-		/*
-		 * if (bypasses.contains(Bypass.MX)) mx_bypass = false; if
-		 * (bypasses.contains(Bypass.WX)) wx_bypass = false; if
-		 * (bypasses.contains(Bypass.WM)) wm_bypass = false;
-		 */
 		for (Insn insn : uiter) {
 			latency_load = false;
 			insn_count++;
 
-			if (insn_count == 3220) {
-				System.out.println("stopping here for debugging purposes");
-			}
+			//if (insn_count == 3220) {
+				//System.out.println("stopping here for debugging purposes");
+			//}
 
-			if ((insn.mem == MemoryOp.Load) || (insn.mem == MemoryOp.Store)) {
+			if (latency != 0 && (insn.mem == MemoryOp.Load) || (insn.mem == MemoryOp.Store)) {
 				cycle_count += latency;
 				latency_count++;
 			}
@@ -192,7 +176,6 @@ public class InorderPipeline implements IInorderPipeline {
 
 				if (stall_flag == true) {
 					next_cycle(mylist[stall_op]);
-					// MyData.cycle_count++;
 					stall_flag = false;
 				}
 			}
@@ -213,24 +196,13 @@ public class InorderPipeline implements IInorderPipeline {
 
 				// System.out.println("load use line number" + MyData.insn_count + " " +
 				// insn.asm);
-				loaduse++;
 				// load use stall
 				if (stall_flag == true) {
+					loaduse++;
 					next_cycle(mylist[stall_op]);
-					// MyData.cycle_count++;
 					stall_flag = false;
 				}
 			}
-
-			// check_MX = true; // set to enter bypass loop
-			/*
-			 * fullbypass so no checking while (check_MX == true || check_WX == true ||
-			 * check_WM == true) { check_MX = MX_bypass(insn); if (stall_flag == true) {
-			 * next_cycle(mylist[stall_op]); stall_flag = false; } check_WX =
-			 * WX_bypass(insn); if (stall_flag == true) { next_cycle(mylist[stall_op]);
-			 * stall_flag = false; } check_WM = WM_bypass(insn); if (stall_flag == true) {
-			 * next_cycle(mylist[stall_op]); stall_flag = false; } }
-			 */
 
 			next_cycle(insn);
 
@@ -242,10 +214,9 @@ public class InorderPipeline implements IInorderPipeline {
 		} // while
 		System.out.println("latency count " + latency_count);
 		System.out.println("loaduse " + loaduse);
-		//System.out.println("WX count " + WX_count);
-		//System.out.println("MX count " + MX_count);
-		//System.out.println("WM count " + WM_count);
+		System.out.println("insn_count: " + insn_count);
 		System.out.println("mispredict " + mispredict_count);
+		System.out.println("cycle_count: " + cycle_count);
 	}// public void run ii
 
 	@Override
@@ -311,47 +282,39 @@ public class InorderPipeline implements IInorderPipeline {
 			execute_state = FULL;
 			decode_state = EMPTY; // set to empty we are shifting to the done stage
 			
-			//if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != mylist[fetch].pc && mylist[fetch].asm != "stall")
-				//System.out.println("incorrect op code: " + mylist[execute].asm);
+			/* if we branched on a non branch dats bad */ 
+			if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != expected_pc[execute] && mylist[execute].asm != "stall")
+			{
+				System.out.println("branched on non branch: " + mylist[execute].asm + " : " + insn_count);
+				cycle_count+=2;
+			}
 			
 			//in this stage of the pipeline we know whether or not its a branch
 			if (mylist[execute].branchType != null && mylist[execute].asm != "stall")
 			{
 				// we did not take
-				if(mylist[execute].fallthroughPC() == expected_pc[execute] /*expected_pc[execute]*/)
+				if(mylist[execute].fallthroughPC() == expected_pc[execute])
 				{
-					//predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
 					//we did not take and were wrong ): 
 					if (mylist[execute].branchDirection != Direction.NotTaken)
 					{
 						predict_type.train(mylist[execute].pc, mylist[execute].branchTarget, mylist[execute].branchDirection);
 						mispredict_count++;
-						System.out.println("not taken line: " + insn_count + " " + mylist[execute].asm);
+						//System.out.println("not taken line: " + insn_count + " " + mylist[execute].asm);
 						cycle_count +=2;
 						
 						
 						if (latency != 0) {
-							
+							/* for the pop instructions which are loads and branches */
 							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
 							{
 								System.err.println("weird thing");
 								cycle_count -=1;
 							}
-							
+							/* for the latency */ 
 							if (mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store) {
 								cycle_count -= 1;
 								//System.out.println("due to latency: " + mylist[execute].asm + " :" + insn_count );
-							}
-							if ((mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store)
-									&& (mylist[write].mem == MemoryOp.Load || mylist[write].mem == MemoryOp.Store)) {
-								//cycle_count -= 1;
-								//System.out.println("DOUBLE LATENCY whaaat ");
-							}
-							if ((mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store)
-									&& (mylist[write].mem == MemoryOp.Load || mylist[write].mem == MemoryOp.Store)
-									&& (mylist[out].mem == MemoryOp.Load || mylist[out].mem == MemoryOp.Store)) {
-								//cycle_count += 1;
-								//System.out.println("three loads add one again? ");
 							}
 						} //if latency
 					}//if we were wrong
@@ -363,38 +326,27 @@ public class InorderPipeline implements IInorderPipeline {
 				}//if not taken
 				
 				// we took
-				else if(mylist[execute].branchTarget == expected_pc[execute] /*expected_pc[execute]*/ )
+				/*else*/ if(mylist[execute].branchTarget == expected_pc[execute])
 				{
 					//we took and were wrong ):
 					if (mylist[execute].branchDirection != Direction.Taken)
 					{
 						predict_type.train(mylist[execute].pc, mylist[execute].fallthroughPC(), mylist[execute].branchDirection);
 						mispredict_count++;
-						System.err.println("taken line: " + (insn_count-3) + mylist[execute].asm);
+						//System.err.println("taken line: " +  mylist[execute].asm);
 						cycle_count +=2;
 																		
 						if (latency != 0) {
-														
+								
+							/* for the pop instructions that are loads and branches */ 
 							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
 							{
-								System.err.println("weird thing");
 								cycle_count -=1;
 							}
-							
+							/* if we have a previous load or store due to latency */ 
 							if (mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store) {
 								cycle_count -= 1;
 								//System.out.println("due to latency");
-							}
-							if ((mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store)
-									&& (mylist[write].mem == MemoryOp.Load || mylist[write].mem == MemoryOp.Store)) {
-								//cycle_count -= 1;
-								//System.out.println("DOUBLE LATENCY whaaat ");
-							}
-							if ((mylist[memory].mem == MemoryOp.Load || mylist[memory].mem == MemoryOp.Store)
-									&& (mylist[write].mem == MemoryOp.Load || mylist[write].mem == MemoryOp.Store)
-									&& (mylist[out].mem == MemoryOp.Load || mylist[out].mem == MemoryOp.Store)) {
-								//cycle_count += 1;
-								//System.out.println("three loads add one again? ");
 							}
 						}//if latency
 					}// if not taken
@@ -405,11 +357,8 @@ public class InorderPipeline implements IInorderPipeline {
 				}//else if 
 				
 			}// if was a branch 
-			
-		} else {
-			// our array is empty so we do nothing... or something?
-		}
-
+		} //if state == full 
+		
 		// we need to copy and then set to empty
 		if (fetch_state == FULL) {
 			mylist[decode] = mylist[fetch];
@@ -420,85 +369,14 @@ public class InorderPipeline implements IInorderPipeline {
 		// since the fetch is empty this is where we begin unless it is the end ofthe
 		// file in that case we have no new data and need to close it off
 		if (fetch_state == EMPTY) {
-			//ARM
-			// synthetic means its a fake instruction
+			// stall means its a fake instruction
 			if(newinsn.asm != "stall")
 				expected_pc[fetch] = predict_type.predict(newinsn.pc, newinsn.fallthroughPC());
-			/*System.out.println("new stack");	
-			System.out.println("expected_pc[execute]: " + insn_count + " " +Integer.toHexString((int) expected_pc[execute]));	
-			System.out.println("expected_pc[decode]: " + insn_count + " "+Integer.toHexString((int) expected_pc[decode]));	
-			System.out.println("expected_pc[fetch]: " + insn_count + " " +Integer.toHexString((int) expected_pc[fetch]));	
-			*/
 			// copy the data we received and mark as full;
 			mylist[fetch] = newinsn;
-			//expected_pc[fetch] = expected_pc;
 			cycle_count++;
 			fetch_state = FULL;
 		}
 	}// end of next_cycle()
-	/*
-	 * public boolean WX_bypass(Insn newinsn) { // function for determing if we need
-	 * a bypass // we need WX bypassing when the Write section has a register value
-	 * of // importance to the X sec // ie X: add r4<-r3,r2 W: add r3<-r2,r1 // look
-	 * at the sources of X and destination of W if ((mylist[decode].dstReg ==
-	 * newinsn.srcReg1) || (mylist[decode].dstReg == newinsn.srcReg2) &&
-	 * first_instruction == false) { // checking for if it is read or write
-	 * immediate if(newinsn.mem == null && mylist[decode].mem != MemoryOp.Load) if
-	 * (newinsn.condCode != CondCodes.WriteCC && (mylist[decode].condCode ==
-	 * CondCodes.ReadCC || mylist[decode].condCode == CondCodes.ReadWriteCC ))
-	 * return false;
-	 * 
-	 * //if (MyData.latency_load == true) //return false;
-	 * 
-	 * //for back to back loads //if (mem == Operation.OTHER &&
-	 * MyData.decode[Operation.MEMOP] == Operation.LOAD &&
-	 * MyData.fetch[Operation.MEMOP] == Operation.LOAD) //return false;
-	 * 
-	 * //check to see if you could have used an MX BYPASS if((mylist[fetch].dstReg
-	 * == newinsn.srcReg1 || mylist[fetch].dstReg == newinsn.srcReg2) &&
-	 * (mylist[decode].dstReg == mylist[fetch].dstReg) && mx_bypass== false) return
-	 * false; //check to see if we could have used a WM BYPASS
-	 * if((mylist[fetch].dstReg == newinsn.srcReg1) && mylist[fetch].mem ==
-	 * MemoryOp.Load && newinsn.mem == MemoryOp.Store && wm_bypass == false) return
-	 * false; //if this occurs then we no stall because the latency does this for
-	 * us. if(latency != 0 && (mylist[fetch].mem == MemoryOp.Load ||
-	 * mylist[fetch].mem == MemoryOp.Store) && (mylist[decode].mem == null ||
-	 * mylist[decode].mem == MemoryOp.Load)) return false;
-	 * 
-	 * if (mylist[decode].dstReg == -1) return false; // we need a bypass if
-	 * (wx_bypass == true)// this flag will be set if we can not use this type of
-	 * bypass { // we need a stall if we are here stall_flag = true; WX_count++; //
-	 * System.out.println(reg1 + " " + reg2 + " " + " "+ return true; } } return
-	 * false; }
-	 */
-	/*
-	 * public boolean MX_bypass(Insn newinsn) { // function for determing if we need
-	 * a MX bypass // we need MX bypassing when the memory section has a register
-	 * value of // importance to the X sec // ie X: add r4<-r3,r2 M: add r3<-r2,r1
-	 * // look at the sources of X and destination of W if ((mylist[fetch].dstReg ==
-	 * newinsn.srcReg1) || (mylist[fetch].dstReg == newinsn.srcReg2) &&
-	 * first_instruction == false && mylist[fetch].mem != MemoryOp.Load) { if
-	 * (mylist[fetch].dstReg == -1) return false;
-	 * 
-	 * // we need a bypass if (mx_bypass == true)// this flag will be set if we can
-	 * not use this type of bypass { // we need a stall if we are here stall_flag =
-	 * true; MX_count++; // System.out.println(reg1 + " " + reg2 + " " + mem + " "+)
-	 * return true; } // if flag } // if giant condition return false; }// mx bypass
-	 */
-	/*
-	 * public boolean WM_bypass(Insn newinsn) { if ((mylist[fetch].dstReg ==
-	 * newinsn.srcReg1) && first_instruction == false && mylist[fetch].dstReg != -1
-	 * && newinsn.mem != MemoryOp.Load //could also be != load or == store &&
-	 * mylist[fetch].mem == MemoryOp.Load) { // we need a bypass if (wm_bypass ==
-	 * true)// this flag will be set if we can not use this type of bypass {
-	 * 
-	 * //check to see if you could have used an MX BYPASS if((mylist[fetch].dstReg
-	 * == newinsn.srcReg1 || mylist[fetch].dstReg == newinsn.srcReg2) &&
-	 * (mylist[decode].dstReg == mylist[fetch].dstReg) && mx_bypass == false) return
-	 * false;
-	 * 
-	 * // we need a stall if we are here stall_flag = true; WM_count++;
-	 * //System.out.println("WM line stall" + MyData.insn_count); return true; } //
-	 * if flag } // if giant condition return false; }// WM bypass
-	 */
+
 }// main
