@@ -24,7 +24,7 @@ public class BranchTargetBuffer implements IBranchTargetBuffer {
     	//for (int i = 0; i < indexBits; i++)
     		//mask |= (1 << i);
     	    	
-    	mask = (int) (Math.pow(2, indexBits) -1);
+    	this.mask = (int) (Math.pow(2, indexBits) -1);
     	//System.out.println("index bits " + indexBits);
     	//System.out.println("mask " + mask);
     	 //mask &= ~(1);
@@ -35,7 +35,7 @@ public class BranchTargetBuffer implements IBranchTargetBuffer {
     @Override
     public long predict(long pc) {
     	
-    	indexBTB = pc & mask;
+    	this.indexBTB = pc & mask;
     	// 2d array [0] = index [1] = tag [2] = target
     	//we need to predict if its a branch AND its next target
     	//tag = hm.get(index);
@@ -53,10 +53,10 @@ public class BranchTargetBuffer implements IBranchTargetBuffer {
     @Override
     public void train(long pc, long actual) {
 
-    	long index = pc & mask;
+    	this.indexBTB = pc & mask;
 
-    	BTB[(int) index][TAG] = pc;
-    	BTB[(int) index][TARGET] = actual;
+    	BTB[(int) indexBTB][TAG] = pc;
+    	BTB[(int) indexBTB][TARGET] = actual;
     	
     }
 }

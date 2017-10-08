@@ -130,7 +130,7 @@ public class InorderPipeline implements IInorderPipeline {
 	// = normal 1 = mems take two clocks 2 = mems take three clocks ...etc
 
 	@Override
-	public void run(Iterable<Insn> uiter) {
+	public void run(InsnIterator ii) {
 		insn_count = 0;
 		cycle_count = 0;
 
@@ -150,7 +150,7 @@ public class InorderPipeline implements IInorderPipeline {
 		// added so we could see more of the pipeline
 		// create our stall instruction;
 
-		for (Insn insn : uiter) {
+		for (Insn insn : ii) {
 			latency_load = false;
 			insn_count++;
 
@@ -256,6 +256,7 @@ public class InorderPipeline implements IInorderPipeline {
 		if (memory_state == FULL) {
 			
 			mylist[write] = mylist[memory];
+			expected_pc[write] = expected_pc[memory];
 			write_state = FULL; // set to full
 			memory_state = EMPTY; // set to empty we are shifting to the done stage
 			
@@ -267,6 +268,7 @@ public class InorderPipeline implements IInorderPipeline {
 		if (execute_state == FULL) {
 						
 			mylist[memory] = mylist[execute];
+			expected_pc[memory] = expected_pc[execute];
 			memory_state = FULL; // set to full
 			execute_state = EMPTY; // set to empty we are shifting to the done stage
 			
@@ -308,7 +310,7 @@ public class InorderPipeline implements IInorderPipeline {
 							/* for the pop instructions which are loads and branches */
 							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
 							{
-								System.err.println("weird thing");
+								//System.err.println("weird thing");
 								cycle_count -=1;
 							}
 							/* for the latency */ 
@@ -326,7 +328,7 @@ public class InorderPipeline implements IInorderPipeline {
 				}//if not taken
 				
 				// we took
-				/*else*/ if(mylist[execute].branchTarget == expected_pc[execute])
+				else if(mylist[execute].branchTarget == expected_pc[execute])
 				{
 					//we took and were wrong ):
 					if (mylist[execute].branchDirection != Direction.Taken)

@@ -7,11 +7,13 @@ import java.io.InputStreamReader;
 import java.util.Iterator;
 import java.util.Stack;
 import java.util.zip.GZIPInputStream;
+import java.util.List;
 
 public class InsnIterator implements Iterator<Insn>, Iterable<Insn> {
 
     private final BufferedReader reader;
     private final int LIMIT;
+    private final List<Insn> list;
     private final Stack<Insn> pbBuffer = new Stack<>();
     private int insnsProcessed = 0;
 
@@ -25,7 +27,8 @@ public class InsnIterator implements Iterator<Insn>, Iterable<Insn> {
         } else {
             LIMIT = limit;
         }
-
+        list = null;
+        
         InputStreamReader isr = null;
         try {
             isr = new InputStreamReader(new GZIPInputStream(new FileInputStream(filename)), "US-ASCII");
@@ -35,12 +38,21 @@ public class InsnIterator implements Iterator<Insn>, Iterable<Insn> {
         reader = new BufferedReader(isr);
     }
 
+    public InsnIterator(List<Insn> l) {
+           reader = null;
+           LIMIT = l.size();
+           list = l;
+    	}
+    
     public boolean hasNext() {
         if (Thread.interrupted()) {
             throw new IllegalStateException("Interrupted!");
         }
         try {
-            return (!pbBuffer.isEmpty()) || (insnsProcessed < LIMIT && reader.ready());
+        	return !pbBuffer.isEmpty() ||
+        			 (insnsProcessed < LIMIT &&
+        			 ((null != reader && reader.ready()) ||
+        			 (null != list && !list.isEmpty())));
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -55,6 +67,9 @@ public class InsnIterator implements Iterator<Insn>, Iterable<Insn> {
             if (!pbBuffer.isEmpty()) {
                 return pbBuffer.pop();
             }
+            if (null != list) {
+            	 return list.remove(0);
+            	 }
             String ln = reader.readLine();
             insnsProcessed++;
             return new Insn(ln);
@@ -70,6 +85,7 @@ public class InsnIterator implements Iterator<Insn>, Iterable<Insn> {
      */
     public void putBack(Insn i) {
         pbBuffer.push(i);
+        insnsProcessed--;
     }
 
     public Iterator<Insn> iterator() {
