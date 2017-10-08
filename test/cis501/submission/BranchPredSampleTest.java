@@ -220,11 +220,47 @@ public class BranchPredSampleTest {
     	final IDirectionPredictor bm = new DirPredBimodal(5);
     	final IDirectionPredictor nev = new DirPredNeverTaken(); 
     	final IBranchTargetBuffer ericbtb = new BranchTargetBuffer(5);
-    	InsnIterator uiter = new InsnIterator(TRACE_FILE,5000);
+    	InsnIterator uiter = new InsnIterator(TRACE_FILE,-1);
     	IInorderPipeline eric = new InorderPipeline(1, new BranchPredictor(nev, ericbtb));
     	eric.run(uiter);
     	assertEquals(7562, eric.getCycles());
     }
     
-    // add more tests here!
+    @Test
+    public void BTBtest() {
+    	final IBranchTargetBuffer ericbtb = new BranchTargetBuffer(3);
+    	long t = 0x040135a6;
+    	long x =0;
+        for (long i = 0; i < 10; i++)
+        {
+        t +=2;
+        x +=20;
+    	ericbtb.train(t,x);
+        assertEquals(x, ericbtb.predict(t));
+        }
+    }
+    @Test
+    public void BTB2test() {
+    	final IBranchTargetBuffer ericbtb = new BranchTargetBuffer(3);
+    	long x =0;
+    	//tests basic functionality
+        for (long i = 0; i < 8; i++)
+        {
+        x +=1;
+    	ericbtb.train(i,x);
+        assertEquals(x, ericbtb.predict(i));
+        }
+        //t = 0x040135a6;
+        //test tagging feature
+        for (long i = 8; i < 16; i++)
+        {
+        //t +=2;
+        //x +=20;
+    	//ericbtb.train(t,x);
+        assertEquals(0, ericbtb.predict(i));
+        }
+        
+        
+    }
+    
 }
