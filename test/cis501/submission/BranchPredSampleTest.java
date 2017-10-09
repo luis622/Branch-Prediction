@@ -36,7 +36,8 @@ public class BranchPredSampleTest {
         // create a tournament predictor that behaves like bimodal
         IDirectionPredictor always = new DirPredAlwaysTaken();
         IDirectionPredictor never = new DirPredNeverTaken();
-        tournament = new DirPredTournament(3/*index bits*/, never, always);
+        //tournament = new DirPredTournament(3/*index bits*/, never, always);
+        tournament = new DirPredTournament(3/*index bits*/, bimodal, gshare);
 
         // pipeline uses never predictor
         pipe = new InorderPipeline(0, new BranchPredictor(never, btb));
@@ -227,4 +228,23 @@ public class BranchPredSampleTest {
     }
     
     // add more tests here!
+    
+    @Test
+    public void CustomTest1() {
+
+        for (int i=4;i<=18;i++)
+        {
+            System.out.println("N= "+i);
+            final IDirectionPredictor never = new DirPredNeverTaken();
+            final IDirectionPredictor bimodal = new DirPredBimodal(i-2);
+            final IDirectionPredictor gshare = new DirPredGshare(i-1, i-1);
+            final IDirectionPredictor tourn = new DirPredTournament(i-2, gshare, bimodal);
+            final IBranchTargetBuffer bigBtb = new BranchTargetBuffer(i);
+            InsnIterator uiter = new InsnIterator(TRACE_FILE, -1);
+            IInorderPipeline pl = new InorderPipeline(1, new BranchPredictor(bimodal, bigBtb));
+            pl.run(uiter);
+           // System.out.println("IPC= "+ (pltourn.getInsns() / (double) pltourn.getCycles()));
+        }
+        //assertEquals(0.96, pltourn.getInsns() / (double) pltourn.getCycles(), 0.01);
+    }
 }

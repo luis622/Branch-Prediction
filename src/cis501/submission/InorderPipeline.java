@@ -308,7 +308,7 @@ public class InorderPipeline implements IInorderPipeline {
 							/* for the pop instructions which are loads and branches */
 							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
 							{
-								System.err.println("weird thing");
+								//System.err.println("weird thing");
 								cycle_count -=1;
 							}
 							/* for the latency */ 
