@@ -43,18 +43,6 @@ enum Stage {
 
 public class InorderPipeline implements IInorderPipeline {
 
-	// private IBranchTargetBuffer btb;
-	// private IDirectionPredictor bimodal;
-	// private IDirectionPredictor gshare;
-	// private IDirectionPredictor tournament;
-
-	// bimodal = new DirPredBimodal(3/*index bits*/);
-
-	// added to for branch prediction
-	// InorderPipeline predict = new InorderPipeline(1,new BranchPredictor(never,
-	// bimodal));
-	// BranchPredictor predictor = new BranchPredictor();
-
 	private BranchPredictor predict_type;
 	private Direction predict_dir;
 	private int latency;
@@ -154,8 +142,8 @@ public class InorderPipeline implements IInorderPipeline {
 			latency_load = false;
 			insn_count++;
 
-			//if (insn_count == 3220) {
-				//System.out.println("stopping here for debugging purposes");
+			//if (insn_count == 1215447) {
+			//	System.out.println("stopping here for debugging purposes");
 			//}
 
 			if (latency != 0 && (insn.mem == MemoryOp.Load) || (insn.mem == MemoryOp.Store)) {
@@ -205,18 +193,17 @@ public class InorderPipeline implements IInorderPipeline {
 			}
 
 			next_cycle(insn);
-
 			first_instruction = false;
 		} // for insn
 
 		for (int x = 0; x <= 4; x++) {
 			next_cycle(mylist[stall_op]); // signifies just emptying the array
 		} // while
-		System.out.println("latency count " + latency_count);
-		System.out.println("loaduse " + loaduse);
-		System.out.println("insn_count: " + insn_count);
-		System.out.println("mispredict " + mispredict_count);
-		System.out.println("cycle_count: " + cycle_count);
+		//System.out.println("latency count " + latency_count);
+		//System.out.println("loaduse " + loaduse);
+		//System.out.println("insn_count: " + insn_count);
+		//System.out.println("mispredict " + mispredict_count);
+		//System.out.println("cycle_count: " + cycle_count);
 	}// public void run ii
 
 	@Override
@@ -266,29 +253,24 @@ public class InorderPipeline implements IInorderPipeline {
 
 		// we need to copy and then set to empty
 		if (execute_state == FULL) {
-						
-			mylist[memory] = mylist[execute];
-			expected_pc[memory] = expected_pc[execute];
-			memory_state = FULL; // set to full
-			execute_state = EMPTY; // set to empty we are shifting to the done stage
-			
-		} else {
-			// our array is empty so we do nothing... or something?
-		}
-
-		// we need to copy and then set to empty
-		if (decode_state == FULL) {
-			
-			mylist[execute] = mylist[decode];
-			expected_pc[execute] = expected_pc[decode];
-			execute_state = FULL;
-			decode_state = EMPTY; // set to empty we are shifting to the done stage
-			
-			/* if we branched on a non branch dats bad */ 
-			if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != expected_pc[execute] && mylist[execute].asm != "stall")
+	
+			/* if we added a stall then we need to look further in the pipeline */
+			if(mylist[decode].asm == "stall")
 			{
-				System.out.println("branched on non branch: " + mylist[execute].asm + " : " + insn_count);
+				if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != mylist[fetch].pc && mylist[execute].asm != "stall" && mylist[fetch].asm != "stall")
+				{
+					System.out.println("branched on non branch: " + mylist[execute].asm + " : " + insn_count);
+					cycle_count+=2;
+					mispredict_count++;
+				}
+				
+			}
+			/* if we branched on a non branch dats bad */ 
+			if(mylist[execute].branchType == null && mylist[execute].fallthroughPC() != mylist[decode].pc && mylist[execute].asm != "stall" && mylist[decode].asm != "stall")
+			{
+				//System.out.println("branched on non branch: " + mylist[execute].asm + " : " + insn_count);
 				cycle_count+=2;
+				mispredict_count++;
 			}
 			
 			//in this stage of the pipeline we know whether or not its a branch
@@ -300,12 +282,11 @@ public class InorderPipeline implements IInorderPipeline {
 					//we did not take and were wrong ): 
 					if (mylist[execute].branchDirection != Direction.NotTaken)
 					{
+						//in this case we took, so we supply the target and taken.
 						predict_type.train(mylist[execute].pc, mylist[execute].branchTarget, mylist[execute].branchDirection);
 						mispredict_count++;
 						//System.out.println("not taken line: " + insn_count + " " + mylist[execute].asm);
 						cycle_count +=2;
-						
-						
 						if (latency != 0) {
 							/* for the pop instructions which are loads and branches */
 							if (mylist[execute].mem == MemoryOp.Load && mylist[execute].branchType != null)
@@ -359,6 +340,22 @@ public class InorderPipeline implements IInorderPipeline {
 				}//else if 
 				
 			}// if was a branch 
+						
+			mylist[memory] = mylist[execute];
+			expected_pc[memory] = expected_pc[execute];
+			memory_state = FULL; // set to full
+			execute_state = EMPTY; // set to empty we are shifting to the done stage
+			
+		} else {
+			// our array is empty so we do nothing... or something?
+		}
+
+		// we need to copy and then set to empty
+		if (decode_state == FULL) {	
+			mylist[execute] = mylist[decode];
+			expected_pc[execute] = expected_pc[decode];
+			execute_state = FULL;
+			decode_state = EMPTY; // set to empty we are shifting to the done stage
 		} //if state == full 
 		
 		// we need to copy and then set to empty

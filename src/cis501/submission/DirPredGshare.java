@@ -71,16 +71,14 @@ public class DirPredGshare extends DirPredBimodal {
 
 		// Train branch predictor
 		if (Direction.Taken == actual) {
-			// Update BHR with taken
-			BHR = (BHR << 1);
-			BHR |= 1;
-
-			// Update if taken and current counter is (NT, nt or t)
+						// Update if taken and current counter is (NT, nt or t)
 			// Saturate the counter if current state is '3'
 			if (confirmPred < 3) {
 				GShareBHT[(int) indexBHT][1] += 1;
 			}
-
+			// Update BHR with taken
+						BHR = (BHR << 1);
+						BHR |= 1;
 			// Update BTB table only if taken
 		}
 		if (Direction.NotTaken == actual) {
@@ -93,6 +91,10 @@ public class DirPredGshare extends DirPredBimodal {
 			if (confirmPred > 0) {
 				GShareBHT[(int) indexBHT][1] -= 1;
 			}
+			// Update BHR with not taken
+						BHR = (BHR << 1);
+						BHR |= 0;
+			
 		}
 
 		// Clearing the nth bit (to model a bounded-size history)
